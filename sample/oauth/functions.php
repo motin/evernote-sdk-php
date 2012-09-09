@@ -21,8 +21,8 @@
   require_once("packages/NoteStore/NoteStore.php");
 
   // Import the classes that we're going to be using
-  use EDAM\NoteStore\NoteStoreClient;
-  use EDAM\Types\Notebook;
+  use EDAM\NoteStore\NoteStoreClient, EDAM\NoteStore\NoteFilter;
+  use EDAM\Types\Notebook, EDAM\Types\NoteSortOrder;
   use EDAM\Error\EDAMSystemException, EDAM\Error\EDAMUserException, EDAM\Error\EDAMErrorCode;
 
   // Verify that you successfully installed the PHP OAuth Extension
@@ -250,6 +250,56 @@
       }
     } catch (Exception $e) {
       $lastError = 'Error creating notebook: ' . $e->getMessage();
+    }
+    return FALSE;
+  }
+
+  function findNotesByNotebookGuidOrderedByCreated($notebookGuid, $offset, $maxNotes) {
+    global $lastError, $currentStatus;
+
+    try {
+  		$parts = parse_url($_SESSION['noteStoreUrl']);
+      if (!isset($parts['port'])) {
+        if ($parts['scheme'] === 'https') {
+          $parts['port'] = 443;
+        } else {
+          $parts['port'] = 80;
+        }
+      }
+
+      $noteStoreTrans = new THttpClient($parts['host'], $parts['port'], $parts['path'], $parts['scheme']);
+
+      $noteStoreProt = new TBinaryProtocol($noteStoreTrans);
+      $noteStore = new NoteStoreClient($noteStoreProt, $noteStoreProt);
+
+      $order = NoteSortOrder::CREATED;
+      $ascending = TRUE;
+      $filter = new NoteFilter(compact("notebookGuid","order","ascending"));
+
+      $authToken = $_SESSION['accessToken'];
+      $notes = $noteStore->findNotes($authToken, $filter, $offset, $maxNotes);
+      $currentStatus = 'Successfully found requested notes';
+      return $notes;
+    } catch (EDAMSystemException $e) {
+      if (isset(EDAMErrorCode::$__names[$e->errorCode])) {
+        $lastError = 'Error finding notes: ' . EDAMErrorCode::$__names[$e->errorCode] . ": " . $e->parameter;
+      } else {
+        $lastError = 'Error finding notes: ' . $e->getCode() . ": " . $e->getMessage();
+      }
+    } catch (EDAMUserException $e) {
+      if (isset(EDAMErrorCode::$__names[$e->errorCode])) {
+        $lastError = 'Error finding notes: ' . EDAMErrorCode::$__names[$e->errorCode] . ": " . $e->parameter;
+      } else {
+        $lastError = 'Error finding notes: ' . $e->getCode() . ": " . $e->getMessage();
+      }
+    } catch (EDAMNotFoundException $e) {
+      if (isset(EDAMErrorCode::$__names[$e->errorCode])) {
+        $lastError = 'Error finding notes: ' . EDAMErrorCode::$__names[$e->errorCode] . ": " . $e->parameter;
+      } else {
+        $lastError = 'Error finding notes: ' . $e->getCode() . ": " . $e->getMessage();
+      }
+    } catch (Exception $e) {
+      $lastError = 'Error finding notes: ' . $e->getMessage();
     }
     return FALSE;
   }
