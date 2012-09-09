@@ -204,7 +204,7 @@
     } catch (Exception $e) {
       $lastError = 'Error listing notebooks: ' . $e->getMessage();
     }
-    trigger_error($lastError);
+    //trigger_error($lastError);
     return FALSE;
   }
   
