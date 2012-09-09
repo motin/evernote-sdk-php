@@ -22,6 +22,7 @@
 
   // Import the classes that we're going to be using
   use EDAM\NoteStore\NoteStoreClient;
+  use EDAM\Types\Notebook;
   use EDAM\Error\EDAMSystemException, EDAM\Error\EDAMUserException, EDAM\Error\EDAMErrorCode;
 
   // Verify that you successfully installed the PHP OAuth Extension
@@ -205,6 +206,54 @@
     return FALSE;
   }
   
+  function createNotebookByNameAndStack($name, $stack) {
+    global $lastError, $currentStatus;
+
+    try {
+  		$parts = parse_url($_SESSION['noteStoreUrl']);
+      if (!isset($parts['port'])) {
+        if ($parts['scheme'] === 'https') {
+          $parts['port'] = 443;
+        } else {
+          $parts['port'] = 80;
+        }
+      }
+
+      $noteStoreTrans = new THttpClient($parts['host'], $parts['port'], $parts['path'], $parts['scheme']);
+
+      $noteStoreProt = new TBinaryProtocol($noteStoreTrans);
+      $noteStore = new NoteStoreClient($noteStoreProt, $noteStoreProt);
+
+      $notebook = new Notebook(compact("name", "stack"));
+
+      $authToken = $_SESSION['accessToken'];
+      $notebook = $noteStore->createNotebook($authToken, $notebook);
+      $currentStatus = 'Successfully created a new notebook';
+      return $notebook;
+    } catch (EDAMSystemException $e) {
+      if (isset(EDAMErrorCode::$__names[$e->errorCode])) {
+        $lastError = 'Error creating notebook: ' . EDAMErrorCode::$__names[$e->errorCode] . ": " . $e->parameter;
+      } else {
+        $lastError = 'Error creating notebook: ' . $e->getCode() . ": " . $e->getMessage();
+      }
+    } catch (EDAMUserException $e) {
+      if (isset(EDAMErrorCode::$__names[$e->errorCode])) {
+        $lastError = 'Error creating notebook: ' . EDAMErrorCode::$__names[$e->errorCode] . ": " . $e->parameter;
+      } else {
+        $lastError = 'Error creating notebook: ' . $e->getCode() . ": " . $e->getMessage();
+      }
+    } catch (EDAMNotFoundException $e) {
+      if (isset(EDAMErrorCode::$__names[$e->errorCode])) {
+        $lastError = 'Error creating notebook: ' . EDAMErrorCode::$__names[$e->errorCode] . ": " . $e->parameter;
+      } else {
+        $lastError = 'Error creating notebook: ' . $e->getCode() . ": " . $e->getMessage();
+      }
+    } catch (Exception $e) {
+      $lastError = 'Error creating notebook: ' . $e->getMessage();
+    }
+    return FALSE;
+  }
+
   /*
    * Reset the current session.
    */
