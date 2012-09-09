@@ -357,6 +357,54 @@
     return FALSE;
   }
 
+
+  function getNote($guid, $withContent = false, $withResourcesData = false, $withResourcesRecognition = false, $withResourcesAlternateData = false) {
+    global $lastError, $currentStatus;
+
+    try {
+  		$parts = parse_url($_SESSION['noteStoreUrl']);
+      if (!isset($parts['port'])) {
+        if ($parts['scheme'] === 'https') {
+          $parts['port'] = 443;
+        } else {
+          $parts['port'] = 80;
+        }
+      }
+
+      $noteStoreTrans = new THttpClient($parts['host'], $parts['port'], $parts['path'], $parts['scheme']);
+
+      $noteStoreProt = new TBinaryProtocol($noteStoreTrans);
+      $noteStore = new NoteStoreClient($noteStoreProt, $noteStoreProt);
+
+      $authToken = $_SESSION['accessToken'];
+      $result = $noteStore->getNote($authToken, $guid, $withContent, $withResourcesData, $withResourcesRecognition, $withResourcesAlternateData);
+      $currentStatus = 'Successfully retrieved note';
+      return $result;
+    } catch (EDAMSystemException $e) {
+      if (isset(EDAMErrorCode::$__names[$e->errorCode])) {
+        $lastError = 'Error retrieving note: ' . EDAMErrorCode::$__names[$e->errorCode] . ": " . $e->parameter;
+      } else {
+        $lastError = 'Error retrieving note: ' . $e->getCode() . ": " . $e->getMessage();
+      }
+    } catch (EDAMUserException $e) {
+      if (isset(EDAMErrorCode::$__names[$e->errorCode])) {
+        $lastError = 'Error retrieving note: ' . EDAMErrorCode::$__names[$e->errorCode] . ": " . $e->parameter;
+      } else {
+        $lastError = 'Error retrieving note: ' . $e->getCode() . ": " . $e->getMessage();
+      }
+    } catch (EDAMNotFoundException $e) {
+      if (isset(EDAMErrorCode::$__names[$e->errorCode])) {
+        $lastError = 'Error retrieving note: ' . EDAMErrorCode::$__names[$e->errorCode] . ": " . $e->parameter;
+      } else {
+        $lastError = 'Error retrieving note: ' . $e->getCode() . ": " . $e->getMessage();
+      }
+    } catch (Exception $e) {
+      $lastError = 'Error retrieving note: ' . $e->getMessage();
+    }
+    trigger_error($lastError);
+    return FALSE;
+  }
+
   /*
    * Reset the current session.
    */
