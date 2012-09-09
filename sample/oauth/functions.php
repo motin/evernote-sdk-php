@@ -140,6 +140,7 @@
     } catch (OAuthException $e) {
       $lastError = 'Error obtaining token credentials: ' . $e->getMessage();
     }  
+    trigger_error($lastError);
     return FALSE;
   }
   
@@ -203,6 +204,7 @@
     } catch (Exception $e) {
       $lastError = 'Error listing notebooks: ' . $e->getMessage();
     }
+    trigger_error($lastError);
     return FALSE;
   }
   
@@ -251,6 +253,7 @@
     } catch (Exception $e) {
       $lastError = 'Error creating notebook: ' . $e->getMessage();
     }
+    trigger_error($lastError);
     return FALSE;
   }
 
@@ -301,6 +304,7 @@
     } catch (Exception $e) {
       $lastError = 'Error finding notes: ' . $e->getMessage();
     }
+    trigger_error($lastError);
     return FALSE;
   }
 
@@ -349,6 +353,7 @@
     } catch (Exception $e) {
       $lastError = 'Error moving note: ' . $e->getMessage();
     }
+    trigger_error($lastError);
     return FALSE;
   }
 
