@@ -52,11 +52,11 @@
    *
    * @return boolean TRUE on success, FALSE on failure
    */
-  function getTemporaryCredentials() {
+  function getTemporaryCredentials($script_name = null) {
     global $lastError, $currentStatus;
     try {
       $oauth = new OAuth(OAUTH_CONSUMER_KEY, OAUTH_CONSUMER_SECRET);
-      $requestTokenInfo = $oauth->getRequestToken(REQUEST_TOKEN_URL, getCallbackUrl());
+      $requestTokenInfo = $oauth->getRequestToken(REQUEST_TOKEN_URL, getCallbackUrl($script_name));
       if ($requestTokenInfo) {
         $_SESSION['requestToken'] = $requestTokenInfo['oauth_token'];
         $_SESSION['requestTokenSecret'] = $requestTokenInfo['oauth_token_secret'];
@@ -246,11 +246,11 @@
    * while obtaining unauthorized temporary credentials (step 1). The resource owner 
    * is redirected to this URL after authorizing the temporary credentials (step 2).
    */
-  function getCallbackUrl() {
+  function getCallbackUrl($script_name = null) {
     $thisUrl = (empty($_SERVER['HTTPS'])) ? "http://" : "https://";
     $thisUrl .= $_SERVER['SERVER_NAME'];
     $thisUrl .= ($_SERVER['SERVER_PORT'] == 80 || $_SERVER['SERVER_PORT'] == 443) ? "" : (":".$_SERVER['SERVER_PORT']);
-    $thisUrl .= $_SERVER['SCRIPT_NAME'];
+    $thisUrl .= !is_null($script_name) ? $script_name : $_SERVER['SCRIPT_NAME'];
     $thisUrl .= '?action=callback';
     return $thisUrl;
   }
