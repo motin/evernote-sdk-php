@@ -304,6 +304,54 @@
     return FALSE;
   }
 
+  function moveNote($note, $toNotebookGuid) {
+    global $lastError, $currentStatus;
+
+    try {
+  		$parts = parse_url($_SESSION['noteStoreUrl']);
+      if (!isset($parts['port'])) {
+        if ($parts['scheme'] === 'https') {
+          $parts['port'] = 443;
+        } else {
+          $parts['port'] = 80;
+        }
+      }
+
+      $noteStoreTrans = new THttpClient($parts['host'], $parts['port'], $parts['path'], $parts['scheme']);
+
+      $noteStoreProt = new TBinaryProtocol($noteStoreTrans);
+      $noteStore = new NoteStoreClient($noteStoreProt, $noteStoreProt);
+
+      $note->notebookGuid = $toNotebookGuid;
+
+      $authToken = $_SESSION['accessToken'];
+      $result = $noteStore->updateNote($authToken, $note);
+      $currentStatus = 'Successfully moved note';
+      return $result;
+    } catch (EDAMSystemException $e) {
+      if (isset(EDAMErrorCode::$__names[$e->errorCode])) {
+        $lastError = 'Error moving note: ' . EDAMErrorCode::$__names[$e->errorCode] . ": " . $e->parameter;
+      } else {
+        $lastError = 'Error moving note: ' . $e->getCode() . ": " . $e->getMessage();
+      }
+    } catch (EDAMUserException $e) {
+      if (isset(EDAMErrorCode::$__names[$e->errorCode])) {
+        $lastError = 'Error moving note: ' . EDAMErrorCode::$__names[$e->errorCode] . ": " . $e->parameter;
+      } else {
+        $lastError = 'Error moving note: ' . $e->getCode() . ": " . $e->getMessage();
+      }
+    } catch (EDAMNotFoundException $e) {
+      if (isset(EDAMErrorCode::$__names[$e->errorCode])) {
+        $lastError = 'Error moving note: ' . EDAMErrorCode::$__names[$e->errorCode] . ": " . $e->parameter;
+      } else {
+        $lastError = 'Error moving note: ' . $e->getCode() . ": " . $e->getMessage();
+      }
+    } catch (Exception $e) {
+      $lastError = 'Error moving note: ' . $e->getMessage();
+    }
+    return FALSE;
+  }
+
   /*
    * Reset the current session.
    */
