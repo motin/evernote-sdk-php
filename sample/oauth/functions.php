@@ -180,7 +180,7 @@
       }
       $_SESSION['notebooks'] = $result;
       $currentStatus = 'Successfully listed content owner\'s notebooks';
-      return TRUE;
+      return $notebooks;
     } catch (EDAMSystemException $e) {
       if (isset(EDAMErrorCode::$__names[$e->errorCode])) {
         $lastError = 'Error listing notebooks: ' . EDAMErrorCode::$__names[$e->errorCode] . ": " . $e->parameter;
