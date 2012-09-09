@@ -140,7 +140,7 @@
     } catch (OAuthException $e) {
       $lastError = 'Error obtaining token credentials: ' . $e->getMessage();
     }  
-    trigger_error($lastError);
+    //trigger_error($lastError);
     return FALSE;
   }
   
