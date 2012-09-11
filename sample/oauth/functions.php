@@ -208,7 +208,7 @@
     return FALSE;
   }
   
-  function createNotebookByNameAndStack($name, $stack) {
+  function createNotebookByNameAndStack($name, $stack = null) {
     global $lastError, $currentStatus;
 
     try {
@@ -226,7 +226,11 @@
       $noteStoreProt = new TBinaryProtocol($noteStoreTrans);
       $noteStore = new NoteStoreClient($noteStoreProt, $noteStoreProt);
 
-      $notebook = new Notebook(compact("name", "stack"));
+      if (!is_null($stack)) {
+        $notebook = new Notebook(compact("name", "stack"));
+      } else {
+        $notebook = new Notebook(compact("name"));
+      }
 
       $authToken = $_SESSION['accessToken'];
       $notebook = $noteStore->createNotebook($authToken, $notebook);
