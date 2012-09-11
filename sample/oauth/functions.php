@@ -19,10 +19,11 @@
   require_once("packages/Types/Types_types.php");
   require_once("packages/UserStore/UserStore.php");
   require_once("packages/NoteStore/NoteStore.php");
+  require_once("packages/Limits/Limits_constants.php");
 
   // Import the classes that we're going to be using
   use EDAM\NoteStore\NoteStoreClient, EDAM\NoteStore\NoteFilter;
-  use EDAM\Types\Notebook, EDAM\Types\NoteSortOrder;
+  use EDAM\Types\Notebook, EDAM\Types\NoteSortOrder, EDAM\Types\Note;
   use EDAM\Error\EDAMSystemException, EDAM\Error\EDAMUserException, EDAM\Error\EDAMErrorCode;
 
   // Verify that you successfully installed the PHP OAuth Extension
@@ -457,6 +458,97 @@
       }
     } catch (Exception $e) {
       $lastError = 'Error retrieving shared note url: ' . $e->getMessage();
+    }
+    trigger_error($lastError);
+    return FALSE;
+  }
+
+  /**
+   * Create a note consisting of a title and plain text content (transformed into basic ENML)
+   *
+   * @global type $lastError
+   * @global string $currentStatus
+   * @param type $title
+   * @param type $content Contents in plain text
+   * @param type $notebookGuid
+   * @return boolean
+   * @throws Exception
+   */
+  function createSimpleNote($title, $content, $notebookGuid = null) {
+    global $lastError, $currentStatus;
+
+    try {
+  		$parts = parse_url($_SESSION['noteStoreUrl']);
+      if (!isset($parts['port'])) {
+        if ($parts['scheme'] === 'https') {
+          $parts['port'] = 443;
+        } else {
+          $parts['port'] = 80;
+        }
+      }
+
+      $noteStoreTrans = new THttpClient($parts['host'], $parts['port'], $parts['path'], $parts['scheme']);
+
+      $noteStoreProt = new TBinaryProtocol($noteStoreTrans);
+      $noteStore = new NoteStoreClient($noteStoreProt, $noteStoreProt);
+
+      $note = new Note();
+      $note->title = $title;
+
+      // When note titles are user-generated, it's important to validate them
+      $len = strlen($note->title);
+      $min = $GLOBALS['EDAM_Limits_Limits_CONSTANTS']['EDAM_NOTE_TITLE_LEN_MIN'];
+      $max = $GLOBALS['EDAM_Limits_Limits_CONSTANTS']['EDAM_NOTE_TITLE_LEN_MAX'];
+      $pattern = '#' . $GLOBALS['EDAM_Limits_Limits_CONSTANTS']['EDAM_NOTE_TITLE_REGEX'] . '#'; // Add PCRE delimiters
+      if ($len < $min || $len > $max || !preg_match($pattern, $note->title)) {
+	      var_dump($len, $min, $max, $pattern);die();
+	throw new Exception("Invalid note title: " . $note->title);
+      }
+
+      // The content of an Evernote note is represented using Evernote Markup Language
+      // (ENML). The full ENML specification can be found in the Evernote API Overview
+      // at http://dev.evernote.com/documentation/cloud/chapters/ENML.php
+      $note->content =
+        '<?xml version="1.0" encoding="UTF-8"?>' .
+        '<!DOCTYPE en-note SYSTEM "http://xml.evernote.com/pub/enml2.dtd">' .
+        '<en-note>' .
+	  nl2br($content) .
+        '</en-note>';
+
+      // If notebookGuid is not supplied, the default notebook will be used
+      if (!is_null($notebookGuid)) {
+        $note->notebookGuid = $notebookGuid;
+      }
+
+      $authToken = $_SESSION['accessToken'];
+
+      // Finally, send the new note to Evernote using the createNote method
+      // The new Note object that is returned will contain server-generated
+      // attributes such as the new note's unique GUID.
+      $createdNote = $noteStore->createNote($authToken, $note);
+
+      $currentStatus = 'Successfully created new note with GUID: ' . $createdNote->guid;
+      return $createdNote;
+    } catch (EDAMSystemException $e) {
+      if (isset(EDAMErrorCode::$__names[$e->errorCode])) {
+        $lastError = 'Error creating new note: ' . EDAMErrorCode::$__names[$e->errorCode] . ": " . $e->parameter;
+      } else {
+        $lastError = 'Error creating new note: ' . $e->getCode() . ": " . $e->getMessage();
+      }
+    } catch (EDAMUserException $e) {
+      if (isset(EDAMErrorCode::$__names[$e->errorCode])) {
+        $lastError = 'Error creating new note: ' . EDAMErrorCode::$__names[$e->errorCode] . ": " . $e->parameter;
+      } else {
+        $lastError = 'Error creating new note: ' . $e->getCode() . ": " . $e->getMessage();
+      }
+    } catch (EDAMNotFoundException $e) {
+      if (isset(EDAMErrorCode::$__names[$e->errorCode])) {
+        $lastError = 'Error creating new note: ' . EDAMErrorCode::$__names[$e->errorCode] . ": " . $e->parameter;
+      } else {
+        $lastError = 'Error creating new note: ' . $e->getCode() . ": " . $e->getMessage();
+      }
+    } catch (Exception $e) {
+      $lastError = 'Error creating new note: ' . $e->getMessage();
     }
     trigger_error($lastError);
     return FALSE;
