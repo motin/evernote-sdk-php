@@ -501,7 +501,6 @@
       $max = $GLOBALS['EDAM_Limits_Limits_CONSTANTS']['EDAM_NOTE_TITLE_LEN_MAX'];
       $pattern = '#' . $GLOBALS['EDAM_Limits_Limits_CONSTANTS']['EDAM_NOTE_TITLE_REGEX'] . '#'; // Add PCRE delimiters
       if ($len < $min || $len > $max || !preg_match($pattern, $note->title)) {
-	      var_dump($len, $min, $max, $pattern);die();
 	throw new Exception("Invalid note title: " . $note->title);
       }
 
