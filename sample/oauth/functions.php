@@ -643,7 +643,7 @@
    */
   function getCallbackUrl($script_name = null) {
     $thisUrl = (empty($_SERVER['HTTPS'])) ? "http://" : "https://";
-    $thisUrl .= $_SERVER['SERVER_NAME'];
+    $thisUrl .= $_SERVER['HTTP_HOST'];
     $thisUrl .= ($_SERVER['SERVER_PORT'] == 80 || $_SERVER['SERVER_PORT'] == 443) ? "" : (":".$_SERVER['SERVER_PORT']);
     $thisUrl .= !is_null($script_name) ? $script_name : $_SERVER['SCRIPT_NAME'];
     $thisUrl .= '?action=callback';
